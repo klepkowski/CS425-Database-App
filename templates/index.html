@@ -1,14 +1,103 @@
-<!DOCTYPE html>
-<html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<title>Flask App</title>
-		<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
-		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-		<script src="{{ url_for('static', filename='js/script.js') }}"></script>
-	</head>
-	<body>
-		<h1>Flask App</h1>
-		<p>This is a Flask App</p>
-	</body>
-</html>
+<!-- templates/index.html -->
+{% extends "base.html" %} {% block content %}
+<h1 class="mt-4">F1 Drivers</h1>
+<form id="driver-form" class="mb-4">
+	<div class="form-group">
+		<label for="name">Name</label>
+		<input type="text" class="form-control" id="name" name="name" required />
+	</div>
+	<div class="form-group">
+		<label for="team">Team</label>
+		<input type="text" class="form-control" id="team" name="team" required />
+	</div>
+	<div class="form-group">
+		<label for="championships">Championships</label>
+		<input type="number" class="form-control" id="championships" name="championships" required />
+	</div>
+	<button type="submit" class="btn btn-primary">Add Driver</button>
+	<button type="button" class="btn btn-secondary" id="update-driver" style="display: none">Update Driver</button>
+</form>
+<ul id="drivers-list" class="list-group"></ul>
+
+<script>
+	$(document).ready(function () {
+		fetchDrivers();
+
+		$("#driver-form").submit(function (event) {
+			event.preventDefault();
+			var driver = {
+				name: $("#name").val(),
+				team: $("#team").val(),
+				championships: $("#championships").val(),
+			};
+
+			$.ajax({
+				url: "/drivers",
+				method: "POST",
+				contentType: "application/json",
+				data: JSON.stringify(driver),
+				success: function (response) {
+					fetchDrivers();
+					$("#driver-form")[0].reset();
+				},
+			});
+		});
+
+		$("#update-driver").click(function () {
+			var driverId = $(this).data("id");
+			var driver = {
+				name: $("#name").val(),
+				team: $("#team").val(),
+				championships: $("#championships").val(),
+			};
+
+			$.ajax({
+				url: "/drivers/" + driverId,
+				method: "PUT",
+				contentType: "application/json",
+				data: JSON.stringify(driver),
+				success: function (response) {
+					fetchDrivers();
+					$("#driver-form")[0].reset();
+					$("#update-driver").hide();
+					$("#driver-form button[type=submit]").show();
+				},
+			});
+		});
+	});
+
+	function fetchDrivers() {
+		$.get("/drivers", function (drivers) {
+			$("#drivers-list").empty();
+			drivers.forEach(function (driver) {
+				var driverItem = `<li class="list-group-item">
+                    ${driver.name} - ${driver.team} (${driver.championships})
+                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editDriver(${driver.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger float-right" onclick="deleteDriver(${driver.id})">Delete</button>
+                </li>`;
+				$("#drivers-list").append(driverItem);
+			});
+		});
+	}
+
+	function editDriver(id) {
+		$.get("/drivers/" + id, function (driver) {
+			$("#name").val(driver.name);
+			$("#team").val(driver.team);
+			$("#championships").val(driver.championships);
+			$("#update-driver").data("id", id).show();
+			$("#driver-form button[type=submit]").hide();
+		});
+	}
+
+	function deleteDriver(id) {
+		$.ajax({
+			url: "/drivers/" + id,
+			method: "DELETE",
+			success: function (response) {
+				fetchDrivers();
+			},
+		});
+	}
+</script>
+{% endblock %}
