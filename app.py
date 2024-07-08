@@ -16,11 +16,31 @@ class Driver(db.Model):
 
     def __repr__(self):
         return f'<Driver {self.name}>'
+
+class Team(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique = True, nullable=False)
+
+    def __repr__(self):
+        return f'<Team {self.name}>'
     
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/teams', methods=['GET'])
+def get_teams():
+    teams = Team.query.all()
+    return jsonify([{'id': team.id, 'name': team.name} for team in teams])
+
+@app.route('/teams', methods=['POST'])
+def add_team():
+    data = request.get_json()
+    new_team = Team(name=data['name'])
+    db.session.add(new_team)
+    db.session.commit()
+    return jsonify({'message': 'Team added successfully'})
     
 @app.route('/drivers', methods=['GET'])
 def get_drivers():
