@@ -1,155 +1,211 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %}
+{% block content %}
 <h1 class="mt-4">F1 Drivers</h1>
 
 <h2 class="mt-4">Add Team</h2>
 <form id="team-form" class="mb-4">
-	<div class="form-group">
-		<label for="team-name">Team Name</label>
-		<input type="text" class="form-control" id="team-name" name="team-name" required />
-	</div>
-	<button type="submit" class="btn btn-primary">Add Team</button>
+    <div class="form-group">
+        <label for="team-name">Team Name</label>
+        <input type="text" class="form-control" id="team-name" name="team-name" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Add Team</button>
+    <button type="button" class="btn btn-secondary" id="update-team" style="display: none">Update Team</button>
 </form>
+
+<ul id="teams-list" class="list-group"></ul>
 
 <h2 class="mt-4">Add Driver</h2>
 <form id="driver-form" class="mb-4">
-	<div class="form-group">
-		<label for="name">Name</label>
-		<input type="text" class="form-control" id="name" name="name" required />
-	</div>
-	<div class="form-group">
-		<label for="team">Team</label>
-		<select class="form-control" id="team" name="team" required></select>
-	</div>
-	<div class="form-group">
-		<label for="championships">Championships</label>
-		<input type="number" class="form-control" id="championships" name="championships" required />
-	</div>
-	<button type="submit" class="btn btn-primary">Add Driver</button>
-	<button type="button" class="btn btn-secondary" id="update-driver" style="display: none">Update Driver</button>
+    <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" class="form-control" id="name" name="name" required />
+    </div>
+    <div class="form-group">
+        <label for="team">Team</label>
+        <select class="form-control" id="team" name="team" required></select>
+    </div>
+    <div class="form-group">
+        <label for="championships">Championships</label>
+        <input type="number" class="form-control" id="championships" name="championships" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Add Driver</button>
+    <button type="button" class="btn btn-secondary" id="update-driver" style="display: none">Update Driver</button>
 </form>
 
 <ul id="drivers-list" class="list-group"></ul>
 
 <script>
-	$(document).ready(function () {
-		fetchTeams();
-		fetchDrivers();
+    $(document).ready(function () {
+        fetchTeams();
+        fetchDrivers();
 
-		$("#team-form").submit(function (event) {
-			event.preventDefault();
-			var team = {
-				name: $("#team-name").val(),
-			};
+        $("#team-form").submit(function (event) {
+            event.preventDefault();
+            var team = {
+                name: $("#team-name").val(),
+            };
 
-			$.ajax({
-				url: "/teams",
-				method: "POST",
-				contentType: "application/json",
-				data: JSON.stringify(team),
-				success: function (response) {
-					fetchTeams();
-					$("#team-form")[0].reset();
-				},
-				error: function (xhr, status, error) {
-					console.error("Error:", error);
-				},
-			});
-		});
+            $.ajax({
+                url: "/teams",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(team),
+                success: function (response) {
+                    fetchTeams();
+                    $("#team-form")[0].reset();
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error:", error);
+                },
+            });
+        });
 
-		$("#driver-form").submit(function (event) {
-			event.preventDefault();
-			var driver = {
-				name: $("#name").val(),
-				team: $("#team").val(),
-				championships: $("#championships").val(),
-			};
+        $("#update-team").click(function () {
+            var teamId = $(this).data("id");
+            var team = {
+                name: $("#team-name").val(),
+            };
 
-			$.ajax({
-				url: "/drivers",
-				method: "POST",
-				contentType: "application/json",
-				data: JSON.stringify(driver),
-				success: function (response) {
-					fetchDrivers();
-					$("#driver-form")[0].reset();
-				},
-				error: function (xhr, status, error) {
-					console.error("Error:", error);
-				},
-			});
-		});
+            $.ajax({
+                url: "/teams/" + teamId,
+                method: "PUT",
+                contentType: "application/json",
+                data: JSON.stringify(team),
+                success: function (response) {
+                    fetchTeams();
+                    $("#team-form")[0].reset();
+                    $("#update-team").hide();
+                    $("#team-form button[type=submit]").show();
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error:", error);
+                },
+            });
+        });
 
-		$("#update-driver").click(function () {
-			var driverId = $(this).data("id");
-			var driver = {
-				name: $("#name").val(),
-				team: $("#team").val(),
-				championships: $("#championships").val(),
-			};
+        $("#driver-form").submit(function (event) {
+            event.preventDefault();
+            var driver = {
+                name: $("#name").val(),
+                team: $("#team").val(),
+                championships: $("#championships").val(),
+            };
 
-			$.ajax({
-				url: "/drivers/" + driverId,
-				method: "PUT",
-				contentType: "application/json",
-				data: JSON.stringify(driver),
-				success: function (response) {
-					fetchDrivers();
-					$("#driver-form")[0].reset();
-					$("#update-driver").hide();
-					$("#driver-form button[type=submit]").show();
-				},
-				error: function (xhr, status, error) {
-					console.error("Error:", error);
-				},
-			});
-		});
-	});
+            $.ajax({
+                url: "/drivers",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(driver),
+                success: function (response) {
+                    fetchDrivers();
+                    $("#driver-form")[0].reset();
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error:", error);
+                },
+            });
+        });
 
-	function fetchTeams() {
-		$.get("/teams", function (teams) {
-			$("#team").empty();
-			teams.forEach(function (team) {
-				var option = `<option value="${team.name}">${team.name}</option>`;
-				$("#team").append(option);
-			});
-		});
-	}
+        $("#update-driver").click(function () {
+            var driverId = $(this).data("id");
+            var driver = {
+                name: $("#name").val(),
+                team: $("#team").val(),
+                championships: $("#championships").val(),
+            };
 
-	function fetchDrivers() {
-		$.get("/drivers", function (drivers) {
-			$("#drivers-list").empty();
-			drivers.forEach(function (driver) {
-				var driverItem = `<li class="list-group-item">
-                ${driver.name} - ${driver.team} (${driver.championships})
-                <button class="btn btn-sm btn-warning float-right ml-2" onclick="editDriver(${driver.id})">Edit</button>
-                <button class="btn btn-sm btn-danger float-right" onclick="deleteDriver(${driver.id})">Delete</button>
-            </li>`;
-				$("#drivers-list").append(driverItem);
-			});
-		});
-	}
+            $.ajax({
+                url: "/drivers/" + driverId,
+                method: "PUT",
+                contentType: "application/json",
+                data: JSON.stringify(driver),
+                success: function (response) {
+                    fetchDrivers();
+                    $("#driver-form")[0].reset();
+                    $("#update-driver").hide();
+                    $("#driver-form button[type=submit]").show();
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error:", error);
+                },
+            });
+        });
+    });
 
-	function editDriver(id) {
-		$.get("/drivers/" + id, function (driver) {
-			$("#name").val(driver.name);
-			$("#team").val(driver.team);
-			$("#championships").val(driver.championships);
-			$("#update-driver").data("id", id).show();
-			$("#driver-form button[type=submit]").hide();
-		});
-	}
+    function fetchTeams() {
+        $.get("/teams", function (teams) {
+            $("#team").empty();
+            $("#teams-list").empty();
+            teams.forEach(function (team) {
+                var option = `<option value="${team.name}">${team.name}</option>`;
+                $("#team").append(option);
 
-	function deleteDriver(id) {
-		$.ajax({
-			url: "/drivers/" + id,
-			method: "DELETE",
-			success: function (response) {
-				fetchDrivers();
-			},
-			error: function (xhr, status, error) {
-				console.error("Error:", error);
-			},
-		});
-	}
+                var teamItem = `<li class="list-group-item">
+                    ${team.name}
+                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editTeam(${team.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger float-right" onclick="deleteTeam(${team.id})">Delete</button>
+                </li>`;
+                $("#teams-list").append(teamItem);
+            });
+        });
+    }
+
+    function fetchDrivers() {
+        $.get("/drivers", function (drivers) {
+            $("#drivers-list").empty();
+            drivers.forEach(function (driver) {
+                var driverItem = `<li class="list-group-item">
+                    ${driver.name} - ${driver.team} (${driver.championships})
+                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editDriver(${driver.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger float-right" onclick="deleteDriver(${driver.id})">Delete</button>
+                </li>`;
+                $("#drivers-list").append(driverItem);
+            });
+        });
+    }
+
+    function editTeam(id) {
+        $.get("/teams/" + id, function (team) {
+            $("#team-name").val(team.name);
+            $("#update-team").data("id", id).show();
+            $("#team-form button[type=submit]").hide();
+        });
+    }
+
+    function deleteTeam(id) {
+        $.ajax({
+            url: "/teams/" + id,
+            method: "DELETE",
+            success: function (response) {
+                fetchTeams();
+            },
+            error: function (xhr, status, error) {
+                console.error("Error:", error);
+            },
+        });
+    }
+
+    function editDriver(id) {
+        $.get("/drivers/" + id, function (driver) {
+            $("#name").val(driver.name);
+            $("#team").val(driver.team);
+            $("#championships").val(driver.championships);
+            $("#update-driver").data("id", id).show();
+            $("#driver-form button[type=submit]").hide();
+        });
+    }
+
+    function deleteDriver(id) {
+        $.ajax({
+            url: "/drivers/" + id,
+            method: "DELETE",
+            success: function (response) {
+                fetchDrivers();
+            },
+            error: function (xhr, status, error) {
+                console.error("Error:", error);
+            },
+        });
+    }
 </script>
 {% endblock %}
