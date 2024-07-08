@@ -19,11 +19,10 @@ class Driver(db.Model):
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique = True, nullable=False)
+    name = db.Column(db.String(100), unique=True, nullable=False)
 
     def __repr__(self):
         return f'<Team {self.name}>'
-    
 
 @app.route('/')
 def index():
@@ -41,7 +40,22 @@ def add_team():
     db.session.add(new_team)
     db.session.commit()
     return jsonify({'message': 'Team added successfully'})
-    
+
+@app.route('/teams/<int:id>', methods=['PUT'])
+def update_team(id):
+    data = request.get_json()
+    team = Team.query.get_or_404(id)
+    team.name = data['name']
+    db.session.commit()
+    return jsonify({'message': 'Team updated successfully'})
+
+@app.route('/teams/<int:id>', methods=['DELETE'])
+def delete_team(id):
+    team = Team.query.get_or_404(id)
+    db.session.delete(team)
+    db.session.commit()
+    return jsonify({'message': 'Team deleted successfully'})
+
 @app.route('/drivers', methods=['GET'])
 def get_drivers():
     drivers = Driver.query.all()
@@ -81,6 +95,3 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(host='127.0.0.1', threaded=True, debug=True)
-
-    
-    
