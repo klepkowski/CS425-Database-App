@@ -8,7 +8,10 @@
 		<input type="text" class="form-control" id="team-name" name="team-name" required />
 	</div>
 	<button type="submit" class="btn btn-primary">Add Team</button>
+	<button type="button" class="btn btn-secondary" id="update-team" style="display: none">Update Team</button>
 </form>
+
+<ul id="teams-list" class="list-group"></ul>
 
 <h2 class="mt-4">Add Driver</h2>
 <form id="driver-form" class="mb-4">
@@ -30,10 +33,27 @@
 
 <ul id="drivers-list" class="list-group"></ul>
 
+<h2 class="mt-4">Add Race Track</h2>
+<form id="racetrack-form" class="mb-4">
+	<div class="form-group">
+		<label for="name">Name</label>
+		<input type="text" class="form-control" id="racetrack-name" name="racetrack-name" required />
+	</div>
+	<div class="form-group">
+		<label for="name">Length</label>
+		<input type="text" class="form-control" id="racetrack-length" name="racetrack-length" required />
+	</div>
+	<button type="submit" class="btn btn-primary">Add Race Track</button>
+	<button type="button" class="btn btn-secondary" id="update-racetrack" style="display: none">Update Race Track</button>
+</form>
+
+<ul id="racetracks-list" class="list-group"></ul>
+
 <script>
 	$(document).ready(function () {
 		fetchTeams();
 		fetchDrivers();
+		fetchRaceTracks();
 
 		$("#team-form").submit(function (event) {
 			event.preventDefault();
@@ -49,6 +69,29 @@
 				success: function (response) {
 					fetchTeams();
 					$("#team-form")[0].reset();
+				},
+				error: function (xhr, status, error) {
+					console.error("Error:", error);
+				},
+			});
+		});
+
+		$("#update-team").click(function () {
+			var teamId = $(this).data("id");
+			var team = {
+				name: $("#team-name").val(),
+			};
+
+			$.ajax({
+				url: "/teams/" + teamId,
+				method: "PUT",
+				contentType: "application/json",
+				data: JSON.stringify(team),
+				success: function (response) {
+					fetchTeams();
+					$("#team-form")[0].reset();
+					$("#update-team").hide();
+					$("#team-form button[type=submit]").show();
 				},
 				error: function (xhr, status, error) {
 					console.error("Error:", error);
@@ -105,12 +148,66 @@
 		});
 	});
 
+	$("#racetrack-form").submit(function (event) {
+		event.preventDefault();
+		var racetrack = {
+			name: $("#racetrack-name").val(),
+			length: $("#racetrack-length").val(),
+		};
+
+		$.ajax({
+			url: "/racetracks",
+			method: "POST",
+			contentType: "application/json",
+			data: JSON.stringify(racetrack),
+			success: function (response) {
+				fetchRaceTracks();
+				$("#racetrack-form")[0].reset();
+			},
+			error: function (xhr, status, error) {
+				console.error("Error:", error);
+			},
+		});
+	});
+
+	$("#update-racetrack").click(function () {
+		var racetrackId = $(this).data("id");
+		var racetrack = {
+			name: $("#racetrack-name").val(),
+			length: $("#racetrack-length").val(),
+		};
+
+		$.ajax({
+			url: "/racetracks/" + racetrackId,
+			method: "PUT",
+			contentType: "application/json",
+			data: JSON.stringify(racetrack),
+			success: function (response) {
+				fetchRaceTracks();
+				$("#racetrack-form")[0].reset();
+				$("#update-racetrack").hide();
+				$("#racetrack-form button[type=submit]").show();
+			},
+			error: function (xhr, status, error) {
+				console.error("Error:", error);
+			},
+		});
+	});
+
 	function fetchTeams() {
 		$.get("/teams", function (teams) {
 			$("#team").empty();
+			$("#teams-list").empty();
 			teams.forEach(function (team) {
 				var option = `<option value="${team.name}">${team.name}</option>`;
 				$("#team").append(option);
+
+				var teamItem = `<li class="list-group-item">
+                    ${team.name}
+                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editTeam(${team.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger float-right" onclick="deleteTeam(${team.id})">Delete</button>
+                </li>`;
+				$("#teams-list").append(teamItem);
 			});
 		});
 	}
@@ -120,12 +217,69 @@
 			$("#drivers-list").empty();
 			drivers.forEach(function (driver) {
 				var driverItem = `<li class="list-group-item">
-                ${driver.name} - ${driver.team} (${driver.championships})
-                <button class="btn btn-sm btn-warning float-right ml-2" onclick="editDriver(${driver.id})">Edit</button>
-                <button class="btn btn-sm btn-danger float-right" onclick="deleteDriver(${driver.id})">Delete</button>
-            </li>`;
+                    ${driver.name} - ${driver.team} (${driver.championships})
+                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editDriver(${driver.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger float-right" onclick="deleteDriver(${driver.id})">Delete</button>
+                </li>`;
 				$("#drivers-list").append(driverItem);
 			});
+		});
+	}
+
+	function fetchRaceTracks() {
+		$.get("/racetracks", function (racetracks) {
+			$("#racetracks-list").empty();
+			racetracks.forEach(function (racetrack) {
+				var racetrackItem = `<li class="list-group-item">
+                    ${racetrack.name} - ${racetrack.length} km
+                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editRaceTrack(${racetrack.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger float-right" onclick="deleteRaceTrack(${racetrack.id})">Delete</button>
+                </li>`;
+				$("#racetracks-list").append(racetrackItem);
+			});
+		});
+	}
+
+	function editRaceTrack(id) {
+		$.get("/racetracks/" + id, function (racetrack) {
+			$("#racetrack-name").val(racetrack.name);
+			$("#racetrack-length").val(racetrack.length);
+			$("#update-racetrack").data("id", id).show();
+			$("#racetrack-form button[type=submit]").hide();
+		});
+	}
+
+	function editTeam(id) {
+		$.get("/teams/" + id, function (team) {
+			$("#team-name").val(team.name);
+			$("#update-team").data("id", id).show();
+			$("#team-form button[type=submit]").hide();
+		});
+	}
+
+	function deleteRaceTrack(id) {
+		$.ajax({
+			url: "/racetracks/" + id,
+			method: "DELETE",
+			success: function (response) {
+				fetchRaceTracks();
+			},
+			error: function (xhr, status, error) {
+				console.error("Error:", error);
+			},
+		});
+	}
+
+	function deleteTeam(id) {
+		$.ajax({
+			url: "/teams/" + id,
+			method: "DELETE",
+			success: function (response) {
+				fetchTeams();
+			},
+			error: function (xhr, status, error) {
+				console.error("Error:", error);
+			},
 		});
 	}
 

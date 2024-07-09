@@ -19,15 +19,56 @@ class Driver(db.Model):
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique = True, nullable=False)
+    name = db.Column(db.String(100), unique=True, nullable=False)
 
     def __repr__(self):
         return f'<Team {self.name}>'
-    
+
+class RaceTrack(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    length = db.Column(db.Integer, nullable=False)
+
+    def __repr__(self):
+        return f'<RaceTrack {self.name}>'
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/racetracks', methods=['GET'])
+def get_racetracks():
+    racetracks = RaceTrack.query.all()
+    return jsonify([{'id': racetrack.id, 'name': racetrack.name, 'length': racetrack.length} for racetrack in racetracks])
+
+@app.route('/racetracks/<int:id>', methods=['GET'])
+def get_racetrack(id):
+    racetrack = RaceTrack.query.get_or_404(id)
+    return jsonify({'id': racetrack.id, 'name': racetrack.name, 'length': racetrack.length})
+
+@app.route('/racetracks', methods=['POST'])
+def add_racetrack():
+    data = request.get_json()
+    new_racetrack = RaceTrack(name=data['name'], length=data['length'])
+    db.session.add(new_racetrack)
+    db.session.commit()
+    return jsonify({'message': 'Race track added successfully'}), 201
+
+@app.route('/racetracks/<int:id>', methods=['PUT'])
+def update_racetrack(id):
+    data = request.get_json()
+    racetrack = RaceTrack.query.get_or_404(id)
+    racetrack.name = data['name']
+    racetrack.length = data['length']
+    db.session.commit()
+    return jsonify({'message': 'Race track updated successfully'})
+
+@app.route('/racetracks/<int:id>', methods=['DELETE'])
+def delete_racetrack(id):
+    racetrack = RaceTrack.query.get_or_404(id)
+    db.session.delete(racetrack)
+    db.session.commit()
+    return jsonify({'message': 'Race track deleted successfully'})
 
 @app.route('/teams', methods=['GET'])
 def get_teams():
@@ -40,8 +81,28 @@ def add_team():
     new_team = Team(name=data['name'])
     db.session.add(new_team)
     db.session.commit()
-    return jsonify({'message': 'Team added successfully'})
-    
+    return jsonify({'message': 'Team added successfully'}), 201
+
+@app.route('/teams/<int:id>', methods=['PUT'])
+def update_team(id):
+    data = request.get_json()
+    team = Team.query.get_or_404(id)
+    team.name = data['name']
+    db.session.commit()
+    return jsonify({'message': 'Team updated successfully'})
+
+@app.route('/teams/<int:id>', methods=['DELETE'])
+def delete_team(id):
+    team = Team.query.get_or_404(id)
+    db.session.delete(team)
+    db.session.commit()
+    return jsonify({'message': 'Team deleted successfully'})
+
+@app.route('/teams/<int:id>', methods=['GET'])
+def get_team(id):
+    team = Team.query.get_or_404(id)
+    return jsonify({'id': team.id, 'name': team.name})
+
 @app.route('/drivers', methods=['GET'])
 def get_drivers():
     drivers = Driver.query.all()
@@ -81,6 +142,3 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(host='127.0.0.1', threaded=True, debug=True)
-
-    
-    
