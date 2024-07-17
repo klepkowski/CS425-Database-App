@@ -1,11 +1,47 @@
-<<<<<<< HEAD {% extends "base.html" %} {% block content %}
+{% extends "base.html" %} {% block content %}
 <h1 class="mt-4">F1 Drivers</h1>
 
 <h2 class="mt-4">Add Team</h2>
 <form id="team-form" class="mb-4">
 	<div class="form-group">
+		<label for="team-id">Team ID</label>
+		<input type="text" class="form-control" id="team-id" name="team-id" required />
+	</div>
+	<div class="form-group">
 		<label for="team-name">Team Name</label>
 		<input type="text" class="form-control" id="team-name" name="team-name" required />
+	</div>
+	<div class="form-group">
+		<label for="location">Location</label>
+		<input type="text" class="form-control" id="location" name="location" required />
+	</div>
+	<div class="form-group">
+		<label for="team-principal">Team Principal</label>
+		<input type="text" class="form-control" id="team-principal" name="team-principal" required />
+	</div>
+	<div class="form-group">
+		<label for="chassis">Chassis</label>
+		<input type="text" class="form-control" id="chassis" name="chassis" required />
+	</div>
+	<div class="form-group">
+		<label for="power-unit">Power Unit</label>
+		<input type="text" class="form-control" id="power-unit" name="power-unit" required />
+	</div>
+	<div class="form-group">
+		<label for="first-team-entry">First Team Entry</label>
+		<input type="text" class="form-control" id="first-team-entry" name="first-team-entry" required />
+	</div>
+	<div class="form-group">
+		<label for="world-championships">World Championships</label>
+		<input type="number" class="form-control" id="world-championships" name="world-championships" required />
+	</div>
+	<div class="form-group">
+		<label for="pole-positions">Pole Positions</label>
+		<input type="number" class="form-control" id="pole-positions" name="pole-positions" required />
+	</div>
+	<div class="form-group">
+		<label for="fastest-laps">Fastest Laps</label>
+		<input type="number" class="form-control" id="fastest-laps" name="fastest-laps" required />
 	</div>
 	<button type="submit" class="btn btn-primary">Add Team</button>
 	<button type="button" class="btn btn-secondary" id="update-team" style="display: none">Update Team</button>
@@ -52,13 +88,22 @@
 <script>
 	$(document).ready(function () {
 		fetchTeams();
-		fetchDrivers();
-		fetchRaceTracks();
+		//fetchDrivers();
+		//fetchRaceTracks();
 
 		$("#team-form").submit(function (event) {
 			event.preventDefault();
 			var team = {
+				team_id: $("#team-id").val(),
 				name: $("#team-name").val(),
+				location: $("#location").val(),
+				team_principal: $("#team-principal").val(),
+				chassis: $("#chassis").val(),
+				power_unit: $("#power-unit").val(),
+				first_team_entry: $("#first-team-entry").val(),
+				world_championships: $("#world-championships").val(),
+				pole_positions: $("#pole-positions").val(),
+				fastest_laps: $("#fastest-laps").val(),
 			};
 
 			$.ajax({
@@ -79,7 +124,16 @@
 		$("#update-team").click(function () {
 			var teamId = $(this).data("id");
 			var team = {
+				team_id: $("#team-id").val(),
 				name: $("#team-name").val(),
+				location: $("#location").val(),
+				team_principal: $("#team-principal").val(),
+				chassis: $("#chassis").val(),
+				power_unit: $("#power-unit").val(),
+				first_team_entry: $("#first-team-entry").val(),
+				world_championships: $("#world-championships").val(),
+				pole_positions: $("#pole-positions").val(),
+				fastest_laps: $("#fastest-laps").val(),
 			};
 
 			$.ajax({
@@ -98,53 +152,53 @@
 				},
 			});
 		});
+	});
 
-		$("#driver-form").submit(function (event) {
-			event.preventDefault();
-			var driver = {
-				name: $("#name").val(),
-				team: $("#team").val(),
-				championships: $("#championships").val(),
-			};
+	$("#driver-form").submit(function (event) {
+		event.preventDefault();
+		var driver = {
+			name: $("#name").val(),
+			team: $("#team").val(),
+			championships: $("#championships").val(),
+		};
 
-			$.ajax({
-				url: "/drivers",
-				method: "POST",
-				contentType: "application/json",
-				data: JSON.stringify(driver),
-				success: function (response) {
-					fetchDrivers();
-					$("#driver-form")[0].reset();
-				},
-				error: function (xhr, status, error) {
-					console.error("Error:", error);
-				},
-			});
+		$.ajax({
+			url: "/drivers",
+			method: "POST",
+			contentType: "application/json",
+			data: JSON.stringify(driver),
+			success: function (response) {
+				fetchDrivers();
+				$("#driver-form")[0].reset();
+			},
+			error: function (xhr, status, error) {
+				console.error("Error:", error);
+			},
 		});
+	});
 
-		$("#update-driver").click(function () {
-			var driverId = $(this).data("id");
-			var driver = {
-				name: $("#name").val(),
-				team: $("#team").val(),
-				championships: $("#championships").val(),
-			};
+	$("#update-driver").click(function () {
+		var driverId = $(this).data("id");
+		var driver = {
+			name: $("#name").val(),
+			team: $("#team").val(),
+			championships: $("#championships").val(),
+		};
 
-			$.ajax({
-				url: "/drivers/" + driverId,
-				method: "PUT",
-				contentType: "application/json",
-				data: JSON.stringify(driver),
-				success: function (response) {
-					fetchDrivers();
-					$("#driver-form")[0].reset();
-					$("#update-driver").hide();
-					$("#driver-form button[type=submit]").show();
-				},
-				error: function (xhr, status, error) {
-					console.error("Error:", error);
-				},
-			});
+		$.ajax({
+			url: "/drivers/" + driverId,
+			method: "PUT",
+			contentType: "application/json",
+			data: JSON.stringify(driver),
+			success: function (response) {
+				fetchDrivers();
+				$("#driver-form")[0].reset();
+				$("#update-driver").hide();
+				$("#driver-form button[type=submit]").show();
+			},
+			error: function (xhr, status, error) {
+				console.error("Error:", error);
+			},
 		});
 	});
 
@@ -196,17 +250,13 @@
 
 	function fetchTeams() {
 		$.get("/teams", function (teams) {
-			$("#team").empty();
 			$("#teams-list").empty();
 			teams.forEach(function (team) {
-				var option = `<option value="${team.name}">${team.name}</option>`;
-				$("#team").append(option);
-
 				var teamItem = `<li class="list-group-item">
-                    ${team.name}
-                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editTeam(${team.id})">Edit</button>
-                    <button class="btn btn-sm btn-danger float-right" onclick="deleteTeam(${team.id})">Delete</button>
-                </li>`;
+                ${team.Name}
+                <button class="btn btn-sm btn-warning float-right ml-2" onclick="editTeam('${team.TeamID}')">Edit</button>
+                <button class="btn btn-sm btn-danger float-right" onclick="deleteTeam('${team.TeamID}')">Delete</button>
+            </li>`;
 				$("#teams-list").append(teamItem);
 			});
 		});
@@ -217,10 +267,10 @@
 			$("#drivers-list").empty();
 			drivers.forEach(function (driver) {
 				var driverItem = `<li class="list-group-item">
-                    ${driver.name} - ${driver.team} (${driver.championships})
-                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editDriver(${driver.id})">Edit</button>
-                    <button class="btn btn-sm btn-danger float-right" onclick="deleteDriver(${driver.id})">Delete</button>
-                </li>`;
+	                    ${driver.name} - ${driver.team} (${driver.championships})
+	                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editDriver(${driver.id})">Edit</button>
+	                    <button class="btn btn-sm btn-danger float-right" onclick="deleteDriver(${driver.id})">Delete</button>
+	                </li>`;
 				$("#drivers-list").append(driverItem);
 			});
 		});
@@ -231,10 +281,10 @@
 			$("#racetracks-list").empty();
 			racetracks.forEach(function (racetrack) {
 				var racetrackItem = `<li class="list-group-item">
-                    ${racetrack.name} - ${racetrack.length} km
-                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editRaceTrack(${racetrack.id})">Edit</button>
-                    <button class="btn btn-sm btn-danger float-right" onclick="deleteRaceTrack(${racetrack.id})">Delete</button>
-                </li>`;
+	                    ${racetrack.name} - ${racetrack.length} km
+	                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editRaceTrack(${racetrack.id})">Edit</button>
+	                    <button class="btn btn-sm btn-danger float-right" onclick="deleteRaceTrack(${racetrack.id})">Delete</button>
+	                </li>`;
 				$("#racetracks-list").append(racetrackItem);
 			});
 		});
@@ -251,7 +301,16 @@
 
 	function editTeam(id) {
 		$.get("/teams/" + id, function (team) {
-			$("#team-name").val(team.name);
+			$("#team-id").val(team.TeamID);
+			$("#team-name").val(team.Name);
+			$("#location").val(team.Location);
+			$("#team-principal").val(team.TeamPrincipal);
+			$("#chassis").val(team.Chassis);
+			$("#power-unit").val(team.PowerUnit);
+			$("#first-team-entry").val(team.FirstTeamEntry);
+			$("#world-championships").val(team.WorldChampionships);
+			$("#pole-positions").val(team.PolePositions);
+			$("#fastest-laps").val(team.FastestLaps);
 			$("#update-team").data("id", id).show();
 			$("#team-form button[type=submit]").hide();
 		});

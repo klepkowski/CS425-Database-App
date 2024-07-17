@@ -1,9 +1,12 @@
 from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+import mysql.connector
+from mysql.connector import Error, IntegrityError
 
 app = Flask(__name__)
-CORS(app)
+
+# CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///f1.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -31,6 +34,23 @@ class RaceTrack(db.Model):
 
     def __repr__(self):
         return f'<RaceTrack {self.name}>'
+    
+def create_connection():
+    try:
+        connection = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="0406",
+            database="formula1"
+        )
+        if connection.is_connected():
+            return connection
+    except Error as e:
+        print(e)
+
+def close_connection(connection):
+    if connection.is_connected():
+        connection.close()
 
 @app.route('/')
 def index():
@@ -72,36 +92,97 @@ def delete_racetrack(id):
 
 @app.route('/teams', methods=['GET'])
 def get_teams():
-    teams = Team.query.all()
-    return jsonify([{'id': team.id, 'name': team.name} for team in teams])
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM team")
+    teams = cursor.fetchall()
+    cursor.close()
+    close_connection(connection)
+    return jsonify(teams), 200
 
 @app.route('/teams', methods=['POST'])
 def add_team():
-    data = request.get_json()
-    new_team = Team(name=data['name'])
-    db.session.add(new_team)
-    db.session.commit()
-    return jsonify({'message': 'Team added successfully'}), 201
+    data = request.json
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+
+    cursor = connection.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO team (TeamID, Name, Location, TeamPrincipal, Chassis, PowerUnit, FirstTeamEntry, WorldChampionships, PolePositions, FastestLaps)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (data['team_id'], data['name'], data['location'], data['team_principal'], data['chassis'], data['power_unit'], data['first_team_entry'], data['world_championships'], data['pole_positions'], data['fastest_laps']))
+        connection.commit()
+        return jsonify({"message": "Team added successfully!"}), 201
+    except IntegrityError as e:
+        if e.errno == 1062:
+            return jsonify({"error": "Duplicate entry"}), 409
+        else:
+            return jsonify({"error": str(e)}), 400
+    except Error as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        cursor.close()
+        close_connection(connection)
 
 @app.route('/teams/<int:id>', methods=['PUT'])
 def update_team(id):
-    data = request.get_json()
-    team = Team.query.get_or_404(id)
-    team.name = data['name']
-    db.session.commit()
-    return jsonify({'message': 'Team updated successfully'})
+    data = request.json
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+
+    cursor = connection.cursor()
+    try:
+        cursor.execute("""
+            UPDATE team
+            SET Name = %s, Location = %s, TeamPrincipal = %s, Chassis = %s, PowerUnit = %s, FirstTeamEntry = %s, WorldChampionships = %s, PolePositions = %s, FastestLaps = %s
+            WHERE TeamID = %s
+        """, (data['name'], data['location'], data['team_principal'], data['chassis'], data['power_unit'], data['first_team_entry'], data['world_championships'], data['pole_positions'], data['fastest_laps'], id))
+        connection.commit()
+        return jsonify({"message": "Team updated successfully!"}), 200
+    except Error as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        cursor.close()
+        close_connection(connection)
 
 @app.route('/teams/<int:id>', methods=['DELETE'])
 def delete_team(id):
-    team = Team.query.get_or_404(id)
-    db.session.delete(team)
-    db.session.commit()
-    return jsonify({'message': 'Team deleted successfully'})
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+
+    cursor = connection.cursor()
+    try:
+        cursor.execute("DELETE FROM team WHERE TeamID = %s", (id,))
+        connection.commit()
+        return jsonify({"message": "Team deleted successfully!"}), 200
+    except Error as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        cursor.close()
+        close_connection(connection)
 
 @app.route('/teams/<int:id>', methods=['GET'])
 def get_team(id):
-    team = Team.query.get_or_404(id)
-    return jsonify({'id': team.id, 'name': team.name})
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM team WHERE TeamID = %s", (id,))
+    team = cursor.fetchone()
+    cursor.close()
+    close_connection(connection)
+    if team:
+        return jsonify(team), 200
+    else:
+        return jsonify({"error": "Team not found"}), 404
 
 @app.route('/drivers', methods=['GET'])
 def get_drivers():
