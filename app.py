@@ -58,8 +58,16 @@ def index():
 
 @app.route('/racetracks', methods=['GET'])
 def get_racetracks():
-    racetracks = RaceTrack.query.all()
-    return jsonify([{'id': racetrack.id, 'name': racetrack.name, 'length': racetrack.length} for racetrack in racetracks])
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM racetrack")
+    racetracks = cursor.fetchall()
+    cursor.close()
+    close_connection(connection)
+    return jsonify(racetracks ), 200
 
 @app.route('/racetracks/<int:id>', methods=['GET'])
 def get_racetrack(id):
@@ -186,8 +194,16 @@ def get_team(id):
 
 @app.route('/drivers', methods=['GET'])
 def get_drivers():
-    drivers = Driver.query.all()
-    return jsonify([{'id': driver.id, 'name': driver.name, 'team': driver.team, 'championships': driver.championships} for driver in drivers])
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM driver")
+    drivers = cursor.fetchall()
+    cursor.close()
+    close_connection(connection)
+    return jsonify(drivers), 200
 
 @app.route('/drivers/<int:id>', methods=['GET'])
 def get_driver(id):
@@ -197,20 +213,45 @@ def get_driver(id):
 @app.route('/drivers', methods=['POST'])
 def add_driver():
     data = request.get_json()
-    new_driver = Driver(name=data['name'], team=data['team'], championships=data['championships'])
-    db.session.add(new_driver)
-    db.session.commit()
-    return jsonify({'message': 'Driver added successfully'}), 201
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    
+    cursor = connection.cursor()
+    try:
+        cursor.execute("""INSERT INTO driver (DriverID, TeamID, Country, Podiums, Points, GrandsPrixEntered, WorldChampionships, HighestRaceFinish, HighestGridPosition, DOB, POB) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (data['driver_id'], data['team_id'], data['country'], data['podiums'], data['points'], data['grands_prix_entered'], data['world_championships'], data['highest_race_finish'], data['highest_grid_position'], data['dob'], data['pob']))
+        connection.commit()
+        return jsonify({'message': 'Driver added successfully'}), 201
+    except IntegrityError as e:
+        if e.errno == 1062:
+            return jsonify({"error": "Duplicate entry"}), 409
+        else:
+            return jsonify({"error": str(e)}), 400
+    except Error as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        cursor.close()
+        close_connection(connection)
 
 @app.route('/drivers/<int:id>', methods=['PUT'])
 def update_driver(id):
     data = request.get_json()
-    driver = Driver.query.get_or_404(id)
-    driver.name = data['name']
-    driver.team = data['team']
-    driver.championships = data['championships']
-    db.session.commit()
-    return jsonify({'message': 'Driver updated successfully'})
+    connection = create_connection()
+
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    
+    cursor = connection.cursor()
+
+    try: 
+        cursor.execute("""UPDATE driver SET Name = %s, DriverId = %s, TeamId = %s, Country = %s, Podiums = %s, Points = %s, GrandsPrixEntered = %s, WorldChampionships = %s, HighestRaceFinish = %s, HighestGridPosition = %s, DOB = %s, POB = %s WHERE DriverID = %s""", (data['name'], data['DriverID'], data['TeamID'], data['Country'], data['Podiums'], data['Points'], data['GrandsPrixEntered'], data['WorldChampionships'], data['HighestRaceFinish'], data['HighestGridPosition'], data['DOB'], data['POB'], id))
+        connection.commit()
+        return jsonify({'message': 'Driver updated successfully'}), 200
+    except Error as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        cursor.close()
+        close_connection(connection)
 
 @app.route('/drivers/<int:id>', methods=['DELETE'])
 def delete_driver(id):
