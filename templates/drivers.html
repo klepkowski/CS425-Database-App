@@ -178,7 +178,7 @@
 	}
 
 	function fetchTeamsForDropdown() {
-		$.get("/teams", function (teams) {
+		$.get("/api/teams", function (teams) {
 			var teamDropdown = $("#team_id");
 			teamDropdown.empty();
 			teams.forEach(function (team) {
