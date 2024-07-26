@@ -1,0 +1,178 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-5">
+	<button class="btn btn-secondary mb-4" onclick="goBack()">Back to Dashboard</button>
+	<h2 class="mt-4">Add Team</h2>
+	<form id="team-form" class="mb-4">
+		<div class="form-group">
+			<label for="team-id">Team ID</label>
+			<input type="text" class="form-control" id="team-id" name="team-id" required />
+		</div>
+		<div class="form-group">
+			<label for="team-name">Team Name</label>
+			<input type="text" class="form-control" id="team-name" name="team-name" required />
+		</div>
+		<div class="form-group">
+			<label for="location">Location</label>
+			<input type="text" class="form-control" id="location" name="location" required />
+		</div>
+		<div class="form-group">
+			<label for="team-principal">Team Principal</label>
+			<input type="text" class="form-control" id="team-principal" name="team-principal" required />
+		</div>
+		<div class="form-group">
+			<label for="chassis">Chassis</label>
+			<input type="text" class="form-control" id="chassis" name="chassis" required />
+		</div>
+		<div class="form-group">
+			<label for="power-unit">Power Unit</label>
+			<input type="text" class="form-control" id="power-unit" name="power-unit" required />
+		</div>
+		<div class="form-group">
+			<label for="first-team-entry">First Team Entry</label>
+			<input type="text" class="form-control" id="first-team-entry" name="first-team-entry" required />
+		</div>
+		<div class="form-group">
+			<label for="world-championships">World Championships</label>
+			<input type="number" class="form-control" id="world-championships" name="world-championships" required />
+		</div>
+		<div class="form-group">
+			<label for="pole-positions">Pole Positions</label>
+			<input type="number" class="form-control" id="pole-positions" name="pole-positions" required />
+		</div>
+		<div class="form-group">
+			<label for="fastest-laps">Fastest Laps</label>
+			<input type="number" class="form-control" id="fastest-laps" name="fastest-laps" required />
+		</div>
+		<button type="submit" class="btn btn-primary">Add Team</button>
+		<button type="button" class="btn btn-secondary" id="update-team" style="display: none">Update Team</button>
+	</form>
+
+	<ul id="teams-list" class="list-group"></ul>
+</div>
+
+<script>
+	function goBack() {
+		window.location.href = "/";
+	}
+
+	$(document).ready(function () {
+		fetchTeams();
+
+		$("#team-form").submit(function (event) {
+			event.preventDefault();
+			var team = {
+				team_id: $("#team-id").val(),
+				name: $("#team-name").val(),
+				location: $("#location").val(),
+				team_principal: $("#team-principal").val(),
+				chassis: $("#chassis").val(),
+				power_unit: $("#power-unit").val(),
+				first_team_entry: $("#first-team-entry").val(),
+				world_championships: $("#world-championships").val(),
+				pole_positions: $("#pole-positions").val(),
+				fastest_laps: $("#fastest-laps").val(),
+			};
+
+			$.ajax({
+				url: "/api/teams",
+				method: "POST",
+				contentType: "application/json",
+				data: JSON.stringify(team),
+				success: function (response) {
+					fetchTeams();
+					$("#team-form")[0].reset();
+				},
+				error: function (xhr, status, error) {
+					console.error("Error:", error);
+				},
+			});
+		});
+
+		$("#update-team").click(function () {
+			var teamId = $(this).data("id");
+			var team = {
+				team_id: $("#team-id").val(),
+				name: $("#team-name").val(),
+				location: $("#location").val(),
+				team_principal: $("#team-principal").val(),
+				chassis: $("#chassis").val(),
+				power_unit: $("#power-unit").val(),
+				first_team_entry: $("#first-team-entry").val(),
+				world_championships: $("#world-championships").val(),
+				pole_positions: $("#pole-positions").val(),
+				fastest_laps: $("#fastest-laps").val(),
+			};
+
+			$.ajax({
+				url: "/api/teams/" + teamId,
+				method: "PUT",
+				contentType: "application/json",
+				data: JSON.stringify(team),
+				success: function (response) {
+					fetchTeams();
+					$("#team-form")[0].reset();
+					$("#update-team").hide();
+					$("#team-form button[type=submit]").show();
+				},
+				error: function (xhr, status, error) {
+					console.error("Error:", error);
+				},
+			});
+		});
+	});
+
+	function fetchTeams() {
+		$.ajax({
+			url: "/api/teams",
+			method: "GET",
+			success: function (teams) {
+				var teamsList = $("#teams-list");
+				teamsList.empty();
+				teams.forEach(function (team) {
+					var teamItem = `<li class="list-group-item">
+                    ${team.Name} - ${team.TeamID}
+                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editTeam(${team.TeamID})">Edit</button>
+                    <button class="btn btn-sm btn-danger float-right" onclick="deleteTeam(${team.TeamID})">Delete</button>
+                </li>`;
+					teamsList.append(teamItem);
+				});
+			},
+			error: function (xhr, status, error) {
+				console.error("Error fetching teams:", error);
+			},
+		});
+	}
+
+	function editTeam(teamId) {
+		$.get("/api/teams/" + teamId, function (team) {
+			$("#team-id").val(team.TeamID);
+			$("#team-name").val(team.Name);
+			$("#location").val(team.Location);
+			$("#team-principal").val(team.TeamPrincipal);
+			$("#chassis").val(team.Chassis);
+			$("#power-unit").val(team.PowerUnit);
+			$("#first-team-entry").val(team.FirstTeamEntry);
+			$("#world-championships").val(team.WorldChampionships);
+			$("#pole-positions").val(team.PolePositions);
+			$("#fastest-laps").val(team.FastestLaps);
+
+			$("#update-team").data("id", teamId).show();
+			$("#team-form button[type=submit]").hide();
+		});
+	}
+
+	function deleteTeam(teamId) {
+		$.ajax({
+			url: "/api/teams/" + teamId,
+			method: "DELETE",
+			success: function (response) {
+				fetchTeams();
+			},
+			error: function (xhr, status, error) {
+				console.error("Error deleting team:", error);
+			},
+		});
+	}
+</script>
+
+{% endblock %}

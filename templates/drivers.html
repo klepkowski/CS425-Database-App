@@ -1,0 +1,195 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-5">
+	<button class="btn btn-secondary mb-4" onclick="goBack()">Back to Dashboard</button>
+	<h2 class="mt-4">Add Driver</h2>
+	<form id="driver-form" class="mb-4">
+		<div class="form-group">
+			<label for="name">Name</label>
+			<input type="text" class="form-control" id="name" driver-id="name" required />
+		</div>
+		<div class="form-group">
+			<label for="driver-id">Driver ID</label>
+			<input type="number" class="form-control" id="driver-id" name="driver-id" required />
+		</div>
+		<div class="form-group">
+			<label for="team_id">Team ID</label>
+			<select class="form-control" id="team_id" name="team_id" required></select>
+		</div>
+		<div class="form-group">
+			<label for="country">Country</label>
+			<input type="Text" class="form-control" id="country" name="country" required />
+		</div>
+		<div class="form-group">
+			<label for="podiums">Podiums</label>
+			<input type="number" class="form-control" id="podiums" name="podiums" required />
+		</div>
+		<div class="form-group">
+			<label for="points">Points</label>
+			<input type="number" class="form-control" id="points" name="points" required />
+		</div>
+		<div class="form-group">
+			<label for="grandPrixEntered">Grand Prix Entered</label>
+			<input type="number" class="form-control" id="grandPrixEntered" name="grandPrixEntered" required />
+		</div>
+		<div class="form-group">
+			<label for="worldChampionships">World Championships</label>
+			<input type="number" class="form-control" id="worldChampionships" name="worldChampionships" required />
+		</div>
+		<div class="form-group">
+			<label for="highestRaceFinish">Highest Race Finish</label>
+			<input type="number" class="form-control" id="highestRaceFinish" name="highestRaceFinish" required />
+		</div>
+		<div class="form-group">
+			<label for="highestGridPosition">Highest Grid Position</label>
+			<input type="number" class="form-control" id="highestGridPosition" name="highestGridPosition" required />
+		</div>
+		<div class="form-group">
+			<label for="DOB">DOB</label>
+			<input type="date" class="form-control" id="DOB" name="DOB" required />
+		</div>
+		<div class="form-group">
+			<label for="POB">POB</label>
+			<input type="Text" class="form-control" id="POB" name="POB" required />
+		</div>
+		<button type="submit" class="btn btn-primary">Add Driver</button>
+		<button type="button" class="btn btn-secondary" id="update-driver" style="display: none">Update Driver</button>
+	</form>
+
+	<ul id="drivers-list" class="list-group"></ul>
+</div>
+
+<script>
+	$(document).ready(function () {
+		fetchDrivers();
+		fetchTeamsForDropdown();
+
+		$("#driver-form").submit(function (event) {
+			event.preventDefault();
+			var driver = {
+				name: $("#name").val(),
+				driver_id: $("#driver-id").val(),
+				team_id: $("#team_id").val(),
+				country: $("#country").val(),
+				podiums: $("#podiums").val(),
+				points: $("#points").val(),
+				grands_prix_entered: $("#worldChampionships").val(),
+				world_championships: $("#grandPrixEntered").val(),
+				highest_race_finish: $("#highestRaceFinish").val(),
+				highest_grid_position: $("#highestGridPosition").val(),
+				dob: $("#DOB").val(),
+				pob: $("#POB").val(),
+			};
+
+			$.ajax({
+				url: "/api/drivers",
+				method: "POST",
+				contentType: "application/json",
+				data: JSON.stringify(driver),
+				success: function (response) {
+					fetchDrivers();
+					$("#driver-form")[0].reset();
+				},
+				error: function (xhr, status, error) {
+					console.error("Error:", error);
+				},
+			});
+		});
+
+		$("#update-driver").click(function () {
+			var driverId = $(this).data("id");
+			var driver = {
+				name: $("#name").val(),
+				driver_id: $("#driver-id").val(),
+				team_id: $("#team_id").val(),
+				country: $("#country").val(),
+				podiums: $("#podiums").val(),
+				points: $("#points").val(),
+				grands_prix_entered: $("#grandPrixEntered").val(),
+				world_championships: $("#worldChampionships").val(),
+				highest_race_finish: $("#highestRaceFinish").val(),
+				highest_grid_position: $("#highestGridPosition").val(),
+				dob: $("#DOB").val(),
+				pob: $("#POB").val(),
+			};
+
+			$.ajax({
+				url: "/api/drivers/" + driverId,
+				method: "PUT",
+				contentType: "application/json",
+				data: JSON.stringify(driver),
+				success: function (response) {
+					fetchDrivers();
+					$("#driver-form")[0].reset();
+					$("#update-driver").hide();
+					$("#driver-form button[type=submit]").show();
+				},
+				error: function (xhr, status, error) {
+					console.error("Error:", error);
+				},
+			});
+		});
+	});
+
+	function fetchDrivers() {
+		$.get("/api/drivers", function (drivers) {
+			$("#drivers-list").empty();
+			drivers.forEach(function (driver) {
+				var driverItem = `<li class="list-group-item">
+                ${driver.Name} - ${driver.DriverID} (${driver.Points})
+                <button class="btn btn-sm btn-warning float-right ml-2" onclick="editDriver(${driver.DriverID})">Edit</button>
+                <button class="btn btn-sm btn-danger float-right" onclick="deleteDriver(${driver.DriverID})">Delete</button>
+            </li>`;
+				$("#drivers-list").append(driverItem);
+			});
+		});
+	}
+
+	function editDriver(driverId) {
+		$.get("/api/drivers/" + driverId, function (driver) {
+			$("#name").val(driver.Name);
+			$("#driver-id").val(driver.DriverID);
+			$("#team_id").val(driver.TeamID);
+			$("#country").val(driver.Country);
+			$("#podiums").val(driver.Podiums);
+			$("#points").val(driver.Points);
+			$("#grandPrixEntered").val(driver.GrandsPrixEntered);
+			$("#worldChampionships").val(driver.WorldChampionships);
+			$("#highestRaceFinish").val(driver.HighestRaceFinish);
+			$("#highestGridPosition").val(driver.HighestGridPosition);
+			$("#DOB").val(driver.DOB);
+			$("#POB").val(driver.POB);
+
+			$("#update-driver").data("id", driverId).show();
+			$("#driver-form button[type=submit]").hide();
+		});
+	}
+
+	function deleteDriver(id) {
+		$.ajax({
+			url: "./api/drivers/" + id,
+			method: "DELETE",
+			success: function (response) {
+				fetchDrivers();
+			},
+			error: function (xhr, status, error) {
+				console.error("Error:", error);
+			},
+		});
+	}
+
+	function fetchTeamsForDropdown() {
+		$.get("/teams", function (teams) {
+			var teamDropdown = $("#team_id");
+			teamDropdown.empty();
+			teams.forEach(function (team) {
+				var option = `<option value="${team.TeamID}">${team.Name} (${team.TeamID})</option>`;
+				teamDropdown.append(option);
+			});
+		});
+	}
+
+	function goBack() {
+		window.location.href = "/";
+	}
+</script>
+{% endblock %}

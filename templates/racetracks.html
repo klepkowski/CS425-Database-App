@@ -1,0 +1,141 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-5">
+	<button class="btn btn-secondary mb-4" onclick="goBack()">Back to Dashboard</button>
+	<h2 class="mt-4">Add Race Track</h2>
+	<form id="racetrack-form" class="mb-4">
+		<div class="form-group">
+			<label for="racetrack-id">RaceTrack ID</label>
+			<input type="text" class="form-control" id="racetrack-id" name="racetrack-id" required />
+		</div>
+		<div class="form-group">
+			<label for="country">Country</label>
+			<input type="text" class="form-control" id="racetrack_country" name="country" required />
+		</div>
+		<div class="form-group">
+			<label for="circuit-length">Circuit Length (km)</label>
+			<input type="text" class="form-control" id="circuit-length" name="circuit-length" required />
+		</div>
+		<div class="form-group">
+			<label for="laps">Number of Laps</label>
+			<input type="text" class="form-control" id="laps" name="laps" required />
+		</div>
+		<div class="form-group">
+			<label for="lap-record">Lap Record (format: 00:00:00)</label>
+			<input type="text" class="form-control" id="lap-record" name="lap-record" required />
+		</div>
+		<div class="form-group">
+			<label for="first-gp">First Grand Prix</label>
+			<input type="text" class="form-control" id="first-gp" name="first-gp" required />
+		</div>
+		<button type="submit" class="btn btn-primary">Add Race Track</button>
+		<button type="button" class="btn btn-secondary" id="update-racetrack" style="display: none">
+			Update Race Track
+		</button>
+	</form>
+
+	<ul id="racetracks-list" class="list-group"></ul>
+</div>
+<script>
+	function goBack() {
+		window.location.href = "/";
+	}
+
+	$(document).ready(function () {
+		fetchRaceTracks();
+
+		$("#racetrack-form").submit(function (event) {
+			event.preventDefault();
+			var racetrack = {
+				racetrackID: $("#racetrack-id").val(),
+				country: $("#racetrack_country").val(),
+				circuitLength: $("#circuit-length").val(),
+				numberOfLaps: $("#laps").val(),
+				lapRecord: $("#lap-record").val(),
+				firstGrandPrix: $("#first-gp").val(),
+			};
+
+			$.ajax({
+				url: "/api/racetracks",
+				method: "POST",
+				contentType: "application/json",
+				data: JSON.stringify(racetrack),
+				success: function (response) {
+					fetchRaceTracks();
+					$("#racetrack-form")[0].reset();
+				},
+				error: function (xhr, status, error) {
+					console.error("Error:", error);
+				},
+			});
+		});
+
+		$("#update-racetrack").click(function () {
+			var racetrackId = $(this).data("id");
+			var racetrack = {
+				racetrackID: $("#racetrack-id").val(),
+				country: $("#racetrack_country").val(),
+				circuitLength: $("#circuit-length").val(),
+				numberOfLaps: $("#laps").val(),
+				lapRecord: $("#lap-record").val(),
+				firstGrandPrix: $("#first-gp").val(),
+			};
+
+			$.ajax({
+				url: "/api/racetracks/" + racetrackId,
+				method: "PUT",
+				contentType: "application/json",
+				data: JSON.stringify(racetrack),
+				success: function (response) {
+					fetchRaceTracks();
+					$("#racetrack-form")[0].reset();
+					$("#update-racetrack").hide();
+					$("#racetrack-form button[type=submit]").show();
+				},
+				error: function (xhr, status, error) {
+					console.error("Error:", error);
+				},
+			});
+		});
+	});
+
+	function fetchRaceTracks() {
+		$.get("/api/racetracks", function (racetracks) {
+			$("#racetracks-list").empty();
+			racetracks.forEach(function (racetrack) {
+				var racetrackItem = `<li class="list-group-item">
+                    ${racetrack.Country} - ${racetrack.CircuitLength} km
+                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editRaceTrack(${racetrack.RaceTrackID})">Edit</button>
+                    <button class="btn btn-sm btn-danger float-right" onclick="deleteRaceTrack(${racetrack.RaceTrackID})">Delete</button>
+                </li>`;
+				$("#racetracks-list").append(racetrackItem);
+			});
+		});
+	}
+
+	function editRaceTrack(id) {
+		$.get("/api/racetracks/" + id, function (racetrack) {
+			$("#racetrack-id").val(racetrack.RaceTrackID);
+			$("#racetrack_country").val(racetrack.Country);
+			$("#circuit-length").val(racetrack.CircuitLength);
+			$("#laps").val(racetrack.NumberOfLaps);
+			$("#lap-record").val(racetrack.lapRecord);
+			$("#first-gp").val(racetrack.FirstGrandPrix);
+			$("#update-racetrack").data("id", id).show();
+			$("#racetrack-form button[type=submit]").hide();
+		});
+	}
+
+	function deleteRaceTrack(id) {
+		$.ajax({
+			url: "/api/racetracks/" + id,
+			method: "DELETE",
+			success: function (response) {
+				fetchRaceTracks();
+			},
+			error: function (xhr, status, error) {
+				console.error("Error:", error);
+			},
+		});
+	}
+</script>
+{% endblock %}

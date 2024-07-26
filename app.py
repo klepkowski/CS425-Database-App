@@ -56,51 +56,40 @@ def close_connection(connection):
     if connection.is_connected():
         connection.close()
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+@app.route('/racetracks')
+def racetracks():
+    return render_template('racetracks.html')  # Assuming you have a template called racetracks.html
 
-@app.route('/racetracks', methods=['GET'])
+@app.route('/api/racetracks', methods=['GET'])
 def get_racetracks():
     connection = create_connection()
     if connection is None:
         return jsonify({"error": "Failed to connect to the database"}), 500
-    
+
     cursor = connection.cursor(dictionary=True)
     cursor.execute("SELECT * FROM racetrack")
     racetracks = cursor.fetchall()
     cursor.close()
     close_connection(connection)
-    
-    for racetrack in racetracks:
-        racetrack['lapRecord'] = str(racetrack['lapRecord'])
-
     return jsonify(racetracks), 200
 
-@app.route('/racetracks/<int:id>', methods=['GET'])
+@app.route('/api/racetracks/<int:id>', methods=['GET'])
 def get_racetrack(id):
     connection = create_connection()
     if connection is None:
         return jsonify({"error": "Failed to connect to the database"}), 500
     
-    cursor = connection.cursor(dictionary=True, buffered=True)
-    cursor.execute("SELECT RaceTrackID, Country, CircuitLength, NumberOfLaps, LapRecord, FirstGrandPrix FROM racetrack WHERE RaceTrackID = %s", (id,))
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM racetrack WHERE racetrackID = %s", (id,))
     racetrack = cursor.fetchone()
     cursor.close()
     close_connection(connection)
-
     if racetrack:
-        racetrack['lapRecord'] = str(racetrack['LapRecord'])
-        racetrack['racetrackID'] = racetrack['RaceTrackID']
-        racetrack['country'] = racetrack['Country']
-        racetrack['circuitLength'] = racetrack['CircuitLength']
-        racetrack['numberOfLaps'] = racetrack['NumberOfLaps']
-        racetrack['firstGrandPrix'] = racetrack['FirstGrandPrix']
         return jsonify(racetrack), 200
     else:
         return jsonify({"error": "Race track not found"}), 404
 
-@app.route('/racetracks', methods=['POST'])
+@app.route('/api/racetracks', methods=['POST'])
 def add_racetrack():
     data = request.get_json()
 
@@ -110,7 +99,7 @@ def add_racetrack():
     
     cursor = connection.cursor()
     try:
-        cursor.execute("""INSERT INTO racetrack (RaceTrackID, Country, CircuitLength, NumberOfLaps, LapRecord, FirstGrandPrix) VALUES (%s, %s, %s, %s, %s, %s)""",
+        cursor.execute("""INSERT INTO racetrack (racetrackID, country, circuitLength, numberOfLaps, lapRecord, firstGrandPrix) VALUES (%s, %s, %s, %s, %s, %s)""",
             (data['racetrackID'], data['country'], data['circuitLength'], data['numberOfLaps'], data['lapRecord'], data['firstGrandPrix']))
         connection.commit()
         return jsonify({'message': 'Race track added successfully'}), 201
@@ -120,7 +109,7 @@ def add_racetrack():
         cursor.close()
         close_connection(connection)
 
-@app.route('/racetracks/<int:id>', methods=['PUT'])
+@app.route('/api/racetracks/<int:id>', methods=['PUT'])
 def update_racetrack(id):
     data = request.get_json()
     connection = create_connection()
@@ -139,7 +128,7 @@ def update_racetrack(id):
         cursor.close()
         close_connection(connection)
 
-@app.route('/racetracks/<int:id>', methods=['DELETE'])
+@app.route('/api/racetracks/<int:id>', methods=['DELETE'])
 def delete_racetrack(id):
     connection = create_connection()
     if connection is None:
@@ -161,7 +150,11 @@ def delete_racetrack(id):
         cursor.close()
         close_connection(connection)
 
-@app.route('/teams', methods=['GET'])
+@app.route('/teams')
+def team():
+    return render_template('team.html')  # Assuming you have a template called drivers.html
+
+@app.route('/api/teams', methods=['GET'])
 def get_teams():
     connection = create_connection()
     if connection is None:
@@ -174,7 +167,7 @@ def get_teams():
     close_connection(connection)
     return jsonify(teams), 200
 
-@app.route('/teams', methods=['POST'])
+@app.route('/api/teams', methods=['POST'])
 def add_team():
     data = request.json
     connection = create_connection()
@@ -200,7 +193,7 @@ def add_team():
         cursor.close()
         close_connection(connection)
 
-@app.route('/teams/<int:id>', methods=['PUT'])
+@app.route('/api/teams/<int:id>', methods=['PUT'])
 def update_team(id):
     data = request.json
     connection = create_connection()
@@ -222,7 +215,7 @@ def update_team(id):
         cursor.close()
         close_connection(connection)
 
-@app.route('/teams/<int:id>', methods=['DELETE'])
+@app.route('/api/teams/<int:id>', methods=['DELETE'])
 def delete_team(id):
     connection = create_connection()
     if connection is None:
@@ -239,7 +232,7 @@ def delete_team(id):
         cursor.close()
         close_connection(connection)
 
-@app.route('/teams/<int:id>', methods=['GET'])
+@app.route('/api/teams/<int:id>', methods=['GET'])
 def get_team(id):
     connection = create_connection()
     if connection is None:
@@ -254,8 +247,12 @@ def get_team(id):
         return jsonify(team), 200
     else:
         return jsonify({"error": "Team not found"}), 404
+    
+@app.route('/drivers')
+def drivers():
+    return render_template('drivers.html')  # Assuming you have a template called drivers.html
 
-@app.route('/drivers', methods=['GET'])
+@app.route('/api/drivers', methods=['GET'])
 def get_drivers():
     connection = create_connection()
     if connection is None:
@@ -263,12 +260,12 @@ def get_drivers():
     
     cursor = connection.cursor(dictionary=True)
     cursor.execute("SELECT * FROM driver")
-    drivers = cursor.fetchall()
+    drivers_ = cursor.fetchall()
     cursor.close()
     close_connection(connection)
-    return jsonify(drivers), 200
+    return jsonify(drivers_), 200
 
-@app.route('/drivers/<int:id>', methods=['GET'])
+@app.route('/api/drivers/<int:id>', methods=['GET'])
 def get_driver(id):
     connection = create_connection()
     if connection is None:
@@ -284,7 +281,7 @@ def get_driver(id):
     else:
         return jsonify({"error": "Driver not found"}), 404
 
-@app.route('/drivers', methods=['POST'])
+@app.route('/api/drivers', methods=['POST'])
 def add_driver():
     data = request.get_json()
 
@@ -309,7 +306,7 @@ def add_driver():
         cursor.close()
         close_connection(connection)
 
-@app.route('/drivers/<int:id>', methods=['PUT'])
+@app.route('/api/drivers/<int:id>', methods=['PUT'])
 def update_driver(id):
     data = request.get_json()
     connection = create_connection()
@@ -319,6 +316,7 @@ def update_driver(id):
     
     cursor = connection.cursor()
 
+    print(data)
     try: 
         cursor.execute("""
             UPDATE driver 
@@ -334,7 +332,7 @@ def update_driver(id):
         close_connection(connection)
 
 
-@app.route('/drivers/<int:id>', methods=['DELETE'])
+@app.route('/api/drivers/<int:id>', methods=['DELETE'])
 def delete_driver(id):
     connection = create_connection()
     if connection is None:
@@ -350,6 +348,26 @@ def delete_driver(id):
     finally:
         cursor.close()
         close_connection(connection)
+
+@app.route('/')
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/teams')
+def teams():
+    return render_template('teams.html')  # Assuming you have a template called teams.html
+
+@app.route('/races')
+def races():
+    return render_template('races.html')  # Assuming you have a template called races.html
+
+@app.route('/constructors')
+def constructors():
+    return render_template('constructors.html')  # Assuming you have a template called constructors.html
+
+@app.route('/results')
+def results():
+    return render_template('results.html')  # Assuming you have a template called results.html
 
 
 if __name__ == '__main__':
