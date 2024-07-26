@@ -5,3 +5,13 @@ html {
 	font-size: 16px;
 	color: #fcfcfc;
 }
+
+@media screen and (min-width: 676px) {
+	.row {
+		padding-top: 16vh !important;
+	}
+}
+
+#drivers-list {
+	padding-bottom: 48px;
+}
