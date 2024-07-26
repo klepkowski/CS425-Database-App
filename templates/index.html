@@ -108,15 +108,15 @@
 <h2 class="mt-4">Add Race Track</h2>
 <form id="racetrack-form" class="mb-4">
 	<div class="form-group">
-		<label for="racetrackID">RaceTrackID</label>
+		<label for="racetrack-id">RaceTrack ID</label>
 		<input type="text" class="form-control" id="racetrack-id" name="racetrack-id" required />
 	</div>
 	<div class="form-group">
 		<label for="country">Country</label>
-		<input type="text" class="form-control" id="country" name="country" required />
+		<input type="text" class="form-control" id="racetrack_country" name="country" required />
 	</div>
 	<div class="form-group">
-		<label for="circuitLength">Circuit Length</label>
+		<label for="circuit-length">Circuit Length (km)</label>
 		<input type="text" class="form-control" id="circuit-length" name="circuit-length" required />
 	</div>
 	<div class="form-group">
@@ -124,24 +124,24 @@
 		<input type="text" class="form-control" id="laps" name="laps" required />
 	</div>
 	<div class="form-group">
-		<label for="lapRecord">Lap record (format: 00:00:00)</label>
-		<input type="text" class="form-control" id="record" name="record" required />
+		<label for="lap-record">Lap Record (format: 00:00:00)</label>
+		<input type="text" class="form-control" id="lap-record" name="lap-record" required />
 	</div>
 	<div class="form-group">
-		<label for="firstgp">First Grand Prix</label>
-		<input type="text" class="form-control" id="firstgp" name="firstgp" required />
+		<label for="first-gp">First Grand Prix</label>
+		<input type="text" class="form-control" id="first-gp" name="first-gp" required />
 	</div>
 	<button type="submit" class="btn btn-primary">Add Race Track</button>
 	<button type="button" class="btn btn-secondary" id="update-racetrack" style="display: none">Update Race Track</button>
 </form>
-
 <ul id="racetracks-list" class="list-group"></ul>
 
 <script>
 	$(document).ready(function () {
 		fetchTeams();
 		fetchDrivers();
-		//fetchRaceTracks();
+		fetchTeamsForDropdown();
+		fetchRaceTracks();
 
 		$("#team-form").submit(function (event) {
 			event.preventDefault();
@@ -247,8 +247,8 @@
 			country: $("#country").val(),
 			podiums: $("#podiums").val(),
 			points: $("#points").val(),
-			grands_prix_entered: $("#worldChampionships").val(),
-			world_championships: $("#grandPrixEntered").val(),
+			grands_prix_entered: $("#grandPrixEntered").val(),
+			world_championships: $("#worldChampionships").val(),
 			highest_race_finish: $("#highestRaceFinish").val(),
 			highest_grid_position: $("#highestGridPosition").val(),
 			dob: $("#DOB").val(),
@@ -276,11 +276,11 @@
 		event.preventDefault();
 		var racetrack = {
 			racetrackID: $("#racetrack-id").val(),
-			country: $("#country").val(),
+			country: $("#racetrack_country").val(),
 			circuitLength: $("#circuit-length").val(),
-			laps: $("#laps").val(),
-			lapRecord: $("#record").val(),
-			firstgp: $("#firstgp").val(),
+			numberOfLaps: $("#laps").val(),
+			lapRecord: $("#lap-record").val(),
+			firstGrandPrix: $("#first-gp").val(),
 		};
 
 		$.ajax({
@@ -301,8 +301,12 @@
 	$("#update-racetrack").click(function () {
 		var racetrackId = $(this).data("id");
 		var racetrack = {
-			name: $("#racetrack-name").val(),
-			length: $("#racetrack-length").val(),
+			racetrackID: $("#racetrack-id").val(),
+			country: $("#racetrack_country").val(),
+			circuitLength: $("#circuit-length").val(),
+			numberOfLaps: $("#laps").val(),
+			lapRecord: $("#lap-record").val(),
+			firstGrandPrix: $("#first-gp").val(),
 		};
 
 		$.ajax({
@@ -341,10 +345,10 @@
 			$("#drivers-list").empty();
 			drivers.forEach(function (driver) {
 				var driverItem = `<li class="list-group-item">
-	                    ${driver.Name} - ${driver.TeamID} (${driver.Points})
-	                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editDriver(${driver.id})">Edit</button>
-	                    <button class="btn btn-sm btn-danger float-right" onclick="deleteDriver(${driver.id})">Delete</button>
-	                </li>`;
+                ${driver.Name} - ${driver.DriverID} (${driver.Points})
+                <button class="btn btn-sm btn-warning float-right ml-2" onclick="editDriver(${driver.DriverID})">Edit</button>
+                <button class="btn btn-sm btn-danger float-right" onclick="deleteDriver(${driver.DriverID})">Delete</button>
+            </li>`;
 				$("#drivers-list").append(driverItem);
 			});
 		});
@@ -355,10 +359,10 @@
 			$("#racetracks-list").empty();
 			racetracks.forEach(function (racetrack) {
 				var racetrackItem = `<li class="list-group-item">
-	                    ${racetrack.name} - ${racetrack.length} km
-	                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editRaceTrack(${racetrack.id})">Edit</button>
-	                    <button class="btn btn-sm btn-danger float-right" onclick="deleteRaceTrack(${racetrack.id})">Delete</button>
-	                </li>`;
+                    ${racetrack.Country} - ${racetrack.CircuitLength} km
+                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editRaceTrack(${racetrack.RaceTrackID})">Edit</button>
+                    <button class="btn btn-sm btn-danger float-right" onclick="deleteRaceTrack(${racetrack.RaceTrackID})">Delete</button>
+                </li>`;
 				$("#racetracks-list").append(racetrackItem);
 			});
 		});
@@ -367,11 +371,11 @@
 	function editRaceTrack(id) {
 		$.get("/racetracks/" + id, function (racetrack) {
 			$("#racetrack-id").val(racetrack.racetrackID);
-			$("#country").val(racetrack.country);
-			$("#length").val(racetrack.length);
-			$("#laps").val(racetrack.laps);
-			$("#record").val(racetrack.lapRecord);
-			$("#firstgp").val(racetrack.firstgp);
+			$("#racetrack_country").val(racetrack.country);
+			$("#circuit-length").val(racetrack.circuitLength);
+			$("#laps").val(racetrack.numberOfLaps);
+			$("#lap-record").val(racetrack.lapRecord);
+			$("#first-gp").val(racetrack.firstGrandPrix);
 			$("#update-racetrack").data("id", id).show();
 			$("#racetrack-form button[type=submit]").hide();
 		});
@@ -391,6 +395,26 @@
 			$("#fastest-laps").val(team.FastestLaps);
 			$("#update-team").data("id", id).show();
 			$("#team-form button[type=submit]").hide();
+		});
+	}
+
+	function editDriver(driverId) {
+		$.get("/drivers/" + driverId, function (driver) {
+			$("#name").val(driver.name);
+			$("#driver-id").val(driver.driver_id);
+			$("#team_id").val(driver.team_id);
+			$("#country").val(driver.country);
+			$("#podiums").val(driver.podiums);
+			$("#points").val(driver.points);
+			$("#grandPrixEntered").val(driver.grands_prix_entered);
+			$("#worldChampionships").val(driver.world_championships);
+			$("#highestRaceFinish").val(driver.highest_race_finish);
+			$("#highestGridPosition").val(driver.highest_grid_position);
+			$("#DOB").val(driver.dob);
+			$("#POB").val(driver.pob);
+
+			$("#update-driver").data("id", driverId).show();
+			$("#driver-form button[type=submit]").hide();
 		});
 	}
 
@@ -420,14 +444,6 @@
 		});
 	}
 
-	function editDriver(id) {
-		$.get("/drivers/" + id, function (driver) {
-			$("#name").val(driver.name);
-			$("#update-driver").data("id", id).show();
-			$("#driver-form button[type=submit]").hide();
-		});
-	}
-
 	function deleteDriver(id) {
 		$.ajax({
 			url: "/drivers/" + id,
@@ -438,6 +454,17 @@
 			error: function (xhr, status, error) {
 				console.error("Error:", error);
 			},
+		});
+	}
+
+	function fetchTeamsForDropdown() {
+		$.get("/teams", function (teams) {
+			var teamDropdown = $("#team_id");
+			teamDropdown.empty();
+			teams.forEach(function (team) {
+				var option = `<option value="${team.TeamID}">${team.Name} (${team.TeamID})</option>`;
+				teamDropdown.append(option);
+			});
 		});
 	}
 </script>
