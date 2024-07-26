@@ -400,18 +400,18 @@
 
 	function editDriver(driverId) {
 		$.get("/drivers/" + driverId, function (driver) {
-			$("#name").val(driver.name);
-			$("#driver-id").val(driver.driver_id);
-			$("#team_id").val(driver.team_id);
-			$("#country").val(driver.country);
-			$("#podiums").val(driver.podiums);
-			$("#points").val(driver.points);
-			$("#grandPrixEntered").val(driver.grands_prix_entered);
-			$("#worldChampionships").val(driver.world_championships);
-			$("#highestRaceFinish").val(driver.highest_race_finish);
-			$("#highestGridPosition").val(driver.highest_grid_position);
-			$("#DOB").val(driver.dob);
-			$("#POB").val(driver.pob);
+			$("#name").val(driver.Name);
+			$("#driver-id").val(driver.DriverID);
+			$("#team_id").val(driver.TeamID);
+			$("#country").val(driver.Country);
+			$("#podiums").val(driver.Podiums);
+			$("#points").val(driver.Points);
+			$("#grandPrixEntered").val(driver.GrandsPrixEntered);
+			$("#worldChampionships").val(driver.WorldChampionships);
+			$("#highestRaceFinish").val(driver.HighestRaceFinish);
+			$("#highestGridPosition").val(driver.HighestGridPosition);
+			$("#DOB").val(driver.DOB);
+			$("#POB").val(driver.POB);
 
 			$("#update-driver").data("id", driverId).show();
 			$("#driver-form button[type=submit]").hide();
