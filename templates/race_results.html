@@ -1,0 +1,147 @@
+<a href="/" class="btn btn-info">Return to Main Menu</a>
+
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mt-4">Races</h1>
+
+<h2 class="mt-4">Add Race</h2>
+<form id="race-form" class="mb-4">
+    <div class="form-group">
+        <label for="race_id">Race ID</label>
+        <input type="text" class="form-control" id="race_id" name="race_id" required />
+    </div>
+    <div class="form-group">
+        <label for="name">Race Name</label>
+        <input type="text" class="form-control" id="name" name="name" required />
+    </div>
+    <div class="form-group">
+        <label for="season_id">Season ID</label>
+        <input type="number" class="form-control" id="season_id" name="season_id" required />
+    </div>
+    <div class="form-group">
+        <label for="racetrack_id">Racetrack ID</label>
+        <input type="number" class="form-control" id="racetrack_id" name="racetrack_id" required />
+    </div>
+    <div class="form-group">
+        <label for="date">Date</label>
+        <input type="date" class="form-control" id="date" name="date" required />
+    </div>
+    <div class="form-group">
+        <label for="winning_driver_id">Winning Driver ID</label>
+        <input type="number" class="form-control" id="winning_driver_id" name="winning_driver_id" />
+    </div>
+    <div class="form-group">
+        <label for="winning_team_id">Winning Team ID</label>
+        <input type="number" class="form-control" id="winning_team_id" name="winning_team_id" />
+    </div>
+    <button type="submit" class="btn btn-primary">Add Race</button>
+    <button type="button" class="btn btn-secondary" id="update-race" style="display: none">Update Race</button>
+</form>
+
+<a href="/" class="btn btn-info">Return to Main Menu</a>
+
+<ul id="races-list" class="list-group"></ul>
+
+<script>
+    $(document).ready(function () {
+        fetchRaces();
+
+        $("#race-form").submit(function (event) {
+            event.preventDefault();
+            var race = {
+                race_id: $("#race_id").val(),
+                name: $("#name").val(),
+                season_id: $("#season_id").val(),
+                racetrack_id: $("#racetrack_id").val(),
+                date: $("#date").val(),
+                winning_driver_id: $("#winning_driver_id").val(),
+                winning_team_id: $("#winning_team_id").val(),
+            };
+
+            $.ajax({
+                url: "/api/races",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(race),
+                success: function (response) {
+                    fetchRaces();
+                    $("#race-form")[0].reset();
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error:", error);
+                },
+            });
+        });
+
+        $("#update-race").click(function () {
+            var raceId = $(this).data("id");
+            var race = {
+                race_id: $("#race_id").val(),
+                name: $("#name").val(),
+                season_id: $("#season_id").val(),
+                racetrack_id: $("#racetrack_id").val(),
+                date: $("#date").val(),
+                winning_driver_id: $("#winning_driver_id").val(),
+                winning_team_id: $("#winning_team_id").val(),
+            };
+
+            $.ajax({
+                url: "/api/races/" + raceId,
+                method: "PUT",
+                contentType: "application/json",
+                data: JSON.stringify(race),
+                success: function (response) {
+                    fetchRaces();
+                    $("#race-form")[0].reset();
+                    $("#update-race").hide();
+                    $("#race-form button[type=submit]").show();
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error:", error);
+                },
+            });
+        });
+    });
+
+    function fetchRaces() {
+        $.get("/api/races", function (races) {
+            $("#races-list").empty();
+            races.forEach(function (race) {
+                var raceItem = `<li class="list-group-item">
+                    ${race.name} - ${race.date}
+                    <button class="btn btn-sm btn-warning float-right ml-2" onclick="editRace(${race.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger float-right" onclick="deleteRace(${race.id})">Delete</button>
+                </li>`;
+                $("#races-list").append(raceItem);
+            });
+        });
+    }
+
+    function editRace(id) {
+        $.get("/api/races/" + id, function (race) {
+            $("#race_id").val(race.race_id);
+            $("#name").val(race.name);
+            $("#season_id").val(race.season_id);
+            $("#racetrack_id").val(race.racetrack_id);
+            $("#date").val(race.date);
+            $("#winning_driver_id").val(race.winning_driver_id);
+            $("#winning_team_id").val(race.winning_team_id);
+            $("#update-race").data("id", id).show();
+            $("#race-form button[type=submit]").hide();
+        });
+    }
+
+    function deleteRace(id) {
+        $.ajax({
+            url: "/api/races/" + id,
+            method: "DELETE",
+            success: function (response) {
+                fetchRaces();
+            },
+            error: function (xhr, status, error) {
+                console.error("Error:", error);
+            },
+        });
+    }
+</script>
+{% endblock %}
