@@ -1,0 +1,150 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-5">
+	<button class="btn btn-secondary mb-4" onclick="goBack()">Back to Dashboard</button>
+	<h2 class="mt-4">Add Season</h2>
+	<form id="season-form" class="mb-4">
+		
+		<div class="form-group">
+			<label for="season-id">Season ID</label>
+			<input type="number" class="form-control" id="season-id" name="season-id" required />
+		</div>
+		<div class="form-group">
+			<label for="year">Year</label>
+			<input type="text" class="form-control" id="year" name="year" required></input>
+		</div>
+		<div class="form-group">
+			<label for="driversChampionID">Drivers Champion ID</label>
+			<select class="form-control" id="driversChampionID" name="driversChampionID" required></select>
+		</div>
+		<div class="form-group">
+			<label for="constructorsChampionID">Constructors Champion ID</label>
+			<select class="form-control" id="constructorsChampionID" name="constructorsChampionID" required></select>
+		</div>
+		<button type="submit" class="btn btn-primary">Add Season</button>
+		<button type="button" class="btn btn-secondary" id="update-season" style="display: none">Update Season</button>
+	</form>
+
+	<ul id="season-list" class="list-group"></ul>
+</div>
+
+<script>
+	$(document).ready(function () {
+    fetchDropdowns();
+    fetchSeasons();
+
+    $("#season-form").submit(function (event) {
+        event.preventDefault();
+        var season = {
+            seasonID: parseInt($("#season-id").val()),
+            year: parseInt($("#year").val()),
+            driversChampionID: parseInt($("#driversChampionID").val()),
+            constructorsChampionID: parseInt($("#constructorsChampionID").val()),
+        };
+
+        $.ajax({
+            url: "/api/season",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(season),
+            success: function (response) {
+                fetchSeasons();
+                $("#season-form")[0].reset();
+            },
+            error: function (xhr, status, error) {
+                console.error("Error:", error);
+            },
+        });
+    });
+
+    $("#update-season").click(function () {
+        var seasonId = $(this).data("id");
+        var season = {
+            seasonID: parseInt($("#season-id").val()),
+            year: parseInt($("#year").val()),
+            driversChampionID: parseInt($("#driversChampionID").val()),
+            constructorsChampionID: parseInt($("#constructorsChampionID").val()),
+        };
+
+        $.ajax({
+            url: "/api/season/" + seasonId,
+            method: "PUT",
+            contentType: "application/json",
+            data: JSON.stringify(season),
+            success: function (response) {
+                fetchSeasons();
+                $("#season-form")[0].reset();
+                $("#update-season").hide();
+                $("#season-form button[type=submit]").show();
+            },
+            error: function (xhr, status, error) {
+                console.error("Error:", error);
+            },
+        });
+    });
+});
+
+	function fetchSeasons() {
+		$.get("/api/season", function (seasons) {
+			$("#season-list").empty();
+			seasons.forEach(function (season) {
+				var seasonItem = `<li class="list-group-item">
+                ${season.SeasonID} - ${season.Year}
+                <button class="btn btn-sm btn-warning float-right ml-2" onclick="editSeason(${season.SeasonID})">Edit</button>
+                <button class="btn btn-sm btn-danger float-right" onclick="deleteSeason(${season.SeasonID})">Delete</button>
+            </li>`;
+				$("#season-list").append(seasonItem);
+			});
+		});
+	}
+
+	function editSeason(seasonId) {
+		$.get("/api/season/" + seasonId, function (season) {
+			$("#season-id").val(season.SeasonID);
+			$("#year").val(season.Year);
+			$("#driversChampionID").val(season.DriversChampionID);
+			$("#constructorsChampionID").val(season.ConstructorChampionID);
+
+			$("#update-season").data("id", seasonId).show();
+			$("#season-form button[type=submit]").hide();
+		});
+	}
+
+	function deleteSeason(id) {
+		$.ajax({
+			url: "./api/season/" + id,
+			method: "DELETE",
+			success: function (response) {
+				fetchSeasons();
+			},
+			error: function (xhr, status, error) {
+				console.error("Error:", error);
+			},
+		});
+	}
+
+  function fetchDropdowns() {
+        $.get("/api/drivers", function (drivers) {
+            $("#driversChampionID").empty();
+            $("#driversChampionID").append('<option value="">Select Driver</option>');
+            drivers.forEach(function (driver) {
+                var option = `<option value="${driver.DriverID}">${driver.Name}</option>`;
+                $("#driversChampionID").append(option);
+            });
+        });
+
+        $.get("/api/teams", function (teams) {
+            $("#constructorsChampionID").empty();
+            $("#constructorsChampionID").append('<option value="">Select Constructor</option>');
+            teams.forEach(function (team) {
+                var option = `<option value="${team.TeamID}">${team.Name}</option>`;
+                $("#constructorsChampionID").append(option);
+            });
+        });
+    }
+
+	function goBack() {
+		window.location.href = "/";
+	}
+</script>
+
+{% endblock %}
