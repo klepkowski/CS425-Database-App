@@ -65,13 +65,22 @@ class RaceResult(db.Model):
     def __repr__(self):
         return f'<RaceResult {self.id}>'
     
+class Season(db.Model):
+    season_id = db.Column(db.Integer, primary_key=True)
+    year = db.Column(db.Integer, nullable=False)
+    driversChampion = db.Column(db.Integer, nullable=False)
+    teamsChampion = db.Column(db.Integer, nullable=False)
+
+    def __repr__(self):
+        return f'<Season {self.year}>'
+    
 def create_connection():
     try:
         connection = mysql.connector.connect(
             host="localhost",
             user="root",
-            password="Smileyface0718bD!",
-            database="mydatabase"
+            password="0406",
+            database="formula1"
         )
         if connection.is_connected():
             return connection
@@ -81,6 +90,96 @@ def create_connection():
 def close_connection(connection):
     if connection.is_connected():
         connection.close()
+
+@app.route('/season')
+def season():
+    return render_template('season.html')
+
+@app.route('/api/season', methods=['GET'])
+def get_seasons():
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM season")
+    seasons = cursor.fetchall()
+    cursor.close()
+    close_connection(connection)
+    return jsonify(seasons), 200
+
+@app.route('/api/season/<int:id>', methods=['GET'])
+def get_season(id):
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM season WHERE SeasonID = %s", (id,))
+    season = cursor.fetchone()
+    cursor.close()
+    close_connection(connection)
+    if season:
+        return jsonify(season), 200
+    else:
+        return jsonify({"error": "Season not found"}), 404
+ 
+@app.route('/api/season', methods=['POST'])
+def add_season():
+    data = request.get_json()
+
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+
+    cursor = connection.cursor()
+    try:
+        cursor.execute("INSERT INTO season (SeasonID, Year, DriversChampionID, ConstructorChampionID) VALUES (%s, %s, %s, %s)",
+                       (data['seasonID'], data['year'], data['driversChampionID'], data['constructorsChampionID']))
+        connection.commit()
+        return jsonify({"message": "Season added successfully!"}), 201
+    except Error as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        cursor.close()
+        close_connection(connection)
+
+@app.route('/api/season/<int:id>', methods=['PUT'])
+def update_season(id):
+    data = request.get_json()
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    
+    cursor = connection.cursor()
+    try:
+        cursor.execute("UPDATE season SET Year = %s, DriversChampionID = %s, ConstructorChampionID = %s WHERE SeasonID = %s",
+            (data['year'], data['driversChampionID'], data['constructorsChampionID'], id))
+        #cursor.fetchall()
+        connection.commit()
+        return jsonify({'message': 'Season updated successfully'}), 200
+    except Error as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        cursor.close()
+
+@app.route('/api/season/<int:id>', methods=['DELETE'])
+def delete_season(id):
+    connection = create_connection()
+    if connection is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+
+    cursor = connection.cursor()
+    try:
+        cursor.execute("DELETE FROM season WHERE SeasonID = %s", (id,))
+        connection.commit()
+        return jsonify({"message": "Season deleted successfully!"}), 200
+    except Error as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        cursor.close()
+        close_connection(connection)
+
 
 @app.route('/racetracks')
 def racetracks():
@@ -431,9 +530,9 @@ def add_race():
     cursor = connection.cursor()
     try:
         cursor.execute("""
-            INSERT INTO race (RaceID, SeasonID, RaceTrackID, Name, Date, WinningDriverID, WinningTeamID)
+            INSERT INTO race (RaceID, SeasonID, RaceTrackID, Name, Date)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (data['race_id'], data['season_id'], data['racetrack_id'], data['name'], data['date'], data['winning_driver_id'], data['winning_team_id']))
+        """, (data['race_id'], data['season_id'], data['racetrack_id'], data['name'], data['date']))
         connection.commit()
         return jsonify({'message': 'Race added successfully'}), 201
     except Error as e:
@@ -453,9 +552,9 @@ def update_race(id):
     try: 
         cursor.execute("""
             UPDATE race 
-            SET Name = %s, SeasonID = %s, RaceTrackID = %s, Date = %s, WinningDriverID = %s, WinningTeamID = %s
+            SET Name = %s, SeasonID = %s, RaceTrackID = %s, Date = %s
             WHERE RaceID = %s
-        """, (data['name'], data['season_id'], data['racetrack_id'], data['date'], data['winning_driver_id'], data['winning_team_id'], id))
+        """, (data['name'], data['season_id'], data['racetrack_id'], data['date'], id))
         connection.commit()
         return jsonify({'message': 'Race updated successfully'}), 200
     except Error as e:
@@ -558,10 +657,6 @@ def delete_race_result(id):
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    app.run(host='127.0.0.1', threaded=True, debug=True)
-
     with app.app_context():
         db.create_all()
     app.run(host='127.0.0.1', threaded=True, debug=True)
